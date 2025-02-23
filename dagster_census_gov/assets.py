@@ -8,6 +8,7 @@ from dagster import AssetExecutionContext, Config, EnvVar, asset
 from dagster_aws.s3 import S3Resource
 import requests
 from bs4 import BeautifulSoup
+from pydantic import Field
 
 
 def zipped_files(url: str, s3_prefix: str, log: Logger):
@@ -119,6 +120,7 @@ class GazetterConfig(Config):
     year: int = 2024
     geographic_entity: str = "STATE"
     s3_prefix: str = "shapefiles/gazetteer/"
+    partition_cols: list
 
 def save_expanded_gazetteer(url: str, config: GazetterConfig, s3: S3Resource, log: Logger) -> str:
     try:
@@ -140,7 +142,7 @@ def save_expanded_gazetteer(url: str, config: GazetterConfig, s3: S3Resource, lo
             pyarrow.parquet.write_to_dataset(
                 table,
                 root_path=s3_key,
-                partition_cols=[],
+                partition_cols=config.partition_cols,
                 filesystem=s3_fs,
                 compression="snappy",
             )
