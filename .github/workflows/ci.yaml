@@ -56,5 +56,5 @@ jobs:
         file: Dockerfile
         push: true
         tags: |
-          ghcr.io/BenGalewsky/dagster-census-gov:${{ env.branch }}
-          ghcr.io/BenGalewsky/dagster-census-gov:latest
+          ghcr.io/bengalewsky/dagster-census-gov:${{ env.branch }}
+          ghcr.io/bengalewsky/dagster-census-gov:latest
