@@ -68,37 +68,15 @@ def save_expanded_zipfile(zipfile: str, s3_prefix: str, s3_client, log: Logger) 
     try:
         # Stream download the zip file
         log.info(f"Downloading zip file from {zipfile}")
-        response = requests.get(zipfile, stream=True)
-        response.raise_for_status()
+        for file in zipped_files(zipfile, s3_prefix, log):
+            s3_key = f"{s3_prefix.rstrip('/')}/{file.name}"
+            log.info(f"Processing {file.name} into {s3_key}")
 
-        # Create a temporary file to store the zip
-        # We need this because ZipFile needs seek capability
-        with tempfile.SpooledTemporaryFile(
-                max_size=10 * 1024 * 1024) as tmp:  # 10MB max in memory
-            # Stream the content in chunks to temp file
-            log.info("Streaming zip file to temporary storage")
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    tmp.write(chunk)
-
-            tmp.seek(0)
-
-            # Process the zip file
-            with ZipFile(tmp) as zip_file:
-                # List all files in the zip
-                for file_info in zip_file.infolist():
-                    if file_info.filename.endswith('/'):  # Skip directories
-                        continue
-
-                    s3_key = f"{s3_prefix.rstrip('/')}/{file_info.filename}"
-                    log.info(f"Processing {file_info.filename} into {s3_key}")
-
-                    # Upload the file to S3
-                    with zip_file.open(file_info) as file:
-                        s3_client.upload_fileobj(
-                            Fileobj=file,
-                            Bucket=EnvVar("DEST_BUCKET").get_value(),
-                            Key=s3_key)
+            # Upload the file to S3
+            s3_client.upload_fileobj(
+                Fileobj=file,
+                Bucket=EnvVar("DEST_BUCKET").get_value(),
+                Key=s3_key)
 
     except requests.exceptions.RequestException as e:
         log.error(f"Error downloading from URL: {str(e)}")
