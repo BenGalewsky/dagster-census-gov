@@ -36,7 +36,7 @@ jobs:
 
     - name: Run pytest
       run: |
-        pytest tests/
+        pytest dagster_census_gov_tests/
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
